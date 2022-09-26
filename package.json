@@ -1,0 +1,17 @@
+{
+  "name": "ehentaireader",
+  "version": "1.0.0",
+  "description": "**该项目目前仍处于开发中**",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@sadais/piui-tool": "^0.0.26",
+    "sadais-piui": "^1.2.7-beta40",
+    "xmldom": "^0.6.0"
+  },
+  "devDependencies": {}
+}

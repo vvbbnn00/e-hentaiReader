@@ -1,0 +1,81 @@
+{
+  "id": "zero-back-top",
+  "displayName": "zero-back-top (返回顶部-火箭动画)",
+  "version": "1.1.1",
+  "description": "一键返回顶部,回到顶部,可选图标模式,火箭模式自带向上淡出的动画",
+  "keywords": [
+    "zero-back-top",
+    "返回顶部"
+],
+  "repository": "",
+  "engines": {
+    "HBuilderX": "^3.1.0"
+  },
+  "dcloudext": {
+    "category": [
+        "前端组件",
+        "通用组件"
+    ],
+    "sale": {
+      "regular": {
+        "price": "0.00"
+      },
+      "sourcecode": {
+        "price": "0.00"
+      }
+    },
+    "contact": {
+      "qq": ""
+    },
+    "declaration": {
+      "ads": "无",
+      "data": "插件不采集任何数据",
+      "permissions": "无"
+    },
+    "npmurl": ""
+  },
+  "uni_modules": {
+    "dependencies": [],
+    "encrypt": [],
+    "platforms": {
+      "cloud": {
+        "tcb": "y",
+        "aliyun": "y"
+      },
+      "client": {
+        "Vue": {
+          "vue2": "y",
+          "vue3": "u"
+        },
+        "App": {
+          "app-vue": "u",
+          "app-nvue": "u"
+        },
+        "H5-mobile": {
+          "Safari": "u",
+          "Android Browser": "u",
+          "微信浏览器(Android)": "u",
+          "QQ浏览器(Android)": "u"
+        },
+        "H5-pc": {
+          "Chrome": "y",
+          "IE": "u",
+          "Edge": "u",
+          "Firefox": "u",
+          "Safari": "u"
+        },
+        "小程序": {
+          "微信": "y",
+          "阿里": "u",
+          "百度": "u",
+          "字节跳动": "u",
+          "QQ": "u"
+        },
+        "快应用": {
+          "华为": "u",
+          "联盟": "u"
+        }
+      }
+    }
+  }
+}
