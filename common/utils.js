@@ -1,6 +1,18 @@
 import api from '@/common/api.js';
+const store = getApp().$store;
+
 // #ifdef APP-PLUS
-import store from '@/common/global_store.js';
+
+const getFile = (relativeFilePath) => {
+	return new Promise((resolve, reject) => {
+		plus.io.resolveLocalFileSystemURL(relativeFilePath, (r) => {
+			resolve(r);
+		}, (e) => {
+			console.log("[getFile] Get File Failed, ", e.message);
+			resolve(null);
+		});
+	})
+}
 
 const getMetaData = (relativeFilePath) => {
 	return new Promise((resolve, reject) => {
@@ -15,6 +27,8 @@ const getMetaData = (relativeFilePath) => {
 					resolve(null);
 				})
 			}, (e) => {
+				console.log("[getMetaData] Get File Meta Data Failed:" + e
+					.message);
 				resolve(null);
 			})
 			// 通过fs.root获取DirectoryEntry对象进行操作 
@@ -231,8 +245,8 @@ class Utils {
 									var level = intent.getIntExtra("level", 0); //电量  
 									var voltage = intent.getIntExtra("voltage", 0); //电池电压  
 									var temperature = intent.getIntExtra("temperature", 0); //电池温度  
-									//如需获取别的，在这里继续写，此代码只提供获取电量  
-									console.log(level);
+									// 如需获取别的，在这里继续写，此代码只提供获取电量  
+									// console.log(level);
 									main.unregisterReceiver(receiver);
 									resolve(level);
 								}
@@ -253,9 +267,15 @@ class Utils {
 
 	async getGalleryPicture(galleryId, url, index) {
 		// #ifdef APP-PLUS
-		let localUrl = `saved/${btoa(galleryId)}/picture_${index}`;
-		let metaData = await getMetaData(localUrl);
-		console.log(metaData, localUrl);
+		let localUrl = `_downloads/saved/${btoa(galleryId)}/picture_${index}`;
+		let file = await getFile(localUrl);
+		console.log(file, localUrl);
+		if (file) {
+			return {
+				success: true,
+				url: file.toLocalURL()
+			}
+		}
 		// #endif
 		let finalUrl = await api.getGalleryPictureUrl(url);
 		if (!finalUrl) return {
@@ -266,6 +286,51 @@ class Utils {
 			success: true,
 			url: finalUrl
 		}
+	}
+
+	/**
+	 * 启动一个下载任务
+	 */
+	async startDownloadTasks(index) {
+		let task = store.downloadingList[index];
+		if (task.started) return; // todo 删除下载中任务，重建下载任务
+		store.downloadingList[index].started = true;
+		// debug
+		store.downloadingList[index].downloadTasks = [store.downloadingList[index]
+			.downloadTasks[0]
+		];
+		for (let i = 0; i < task.downloadTasks.length; i++) {
+			let item = task.downloadTasks[i];
+			if (!item.status) {
+				item.status = "pending";
+			}
+			let durl = await api.getGalleryPictureUrl(item.href);
+			let taskId = null,
+				taskName = task.galleryId + '-' + item.index;
+			if (!durl) {
+				item.status = "failed";
+			}
+			// #ifdef APP-PLUS
+			let dtask = plus.downloader.createDownload(durl, {
+				filename: `_downloads/saved/${btoa(task.galleryId)}/picture_${item.index}`
+			}, function(d, status) {
+				// 下载完成
+				if (status == 200) {
+					console.log("[downloadPicture] Download success." + taskName, d.filename);
+					item.status = "success";
+				} else {
+					console.log("[downloadPicture] Download failed: " + status, taskName);
+					item.status = "failed";
+				}
+			});
+			taskId = dtask.id;
+			dtask.start();
+			// #endif
+			item.status = "downloading";
+			item.taskId = taskId;
+		};
+		console.log(JSON.stringify(await this.getDownloadTasks()), JSON.stringify(getApp().$store.downloadingList[
+			index]));
 	}
 }
 

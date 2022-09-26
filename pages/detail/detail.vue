@@ -13,6 +13,15 @@
 					<button class="mini-btn" type="primary" size="mini" @click="readGallery()">阅读</button>
 					<span>
 						<uni-icons class="btn-download" v-if="downloadStatus == 'notDownloaded'" type="cloud-download" @click="download"></uni-icons>
+						<view class="downloading">
+							<uni-icons
+								style="font-size:22px !important"
+								class="btn-download"
+								v-if="downloadStatus == 'downloading'"
+								type="icon-loading"
+								customPrefix="iconfont"
+							></uni-icons>
+						</view>
 						<uni-icons class="btn-download" v-if="downloadStatus == 'succeed'" type="trash-filled" @click="deleteRecord"></uni-icons>
 					</span>
 				</view>
@@ -200,16 +209,16 @@ export default {
 	},
 	computed: {
 		computedTitle() {
-			let translate = store.getConfig('config:view:showJapaneseTitle', true);
+			let translate = this.$store.getConfig('config:view:showJapaneseTitle', true);
 			return translate ? this.titleJP : this.title;
 		},
 		computedLanguage() {
-			let translate = store.getConfig('config:view:translateTag', true);
+			let translate = this.$store.getConfig('config:view:translateTag', true);
 			let r = SearchFromTagDatabase('language', this.language.toLowerCase());
 			return translate ? r.tagCN : r.tag;
 		},
 		computedType() {
-			let translate = store.getConfig('config:view:translateCate', true);
+			let translate = this.$store.getConfig('config:view:translateCate', true);
 			if (translate) {
 				return {
 					color: CATEGROIES[this.type].color,
@@ -228,7 +237,7 @@ export default {
 		computedTags() {
 			return this.tags.slice(0, 7).map(item => {
 				let n = item.split(':');
-				let translate = store.getConfig('config:view:translateTag', true);
+				let translate = this.$store.getConfig('config:view:translateTag', true);
 				if (n.length !== 2)
 					return {
 						id: item,
@@ -294,7 +303,7 @@ export default {
 			});
 		},
 		share() {
-			let translate = store.getConfig('config:view:showJapaneseTitle', true);
+			let translate = this.$store.getConfig('config:view:showJapaneseTitle', true);
 			let shareObj = {
 				type: 'text',
 				summary: translate ? this.titleJP : this.title,
@@ -332,7 +341,18 @@ export default {
 			});
 		},
 		download() {
-			this.downloadStatus = 'succeed';
+			this.downloadStatus = 'downloading';
+			api.createDownloadTask(this.galleryId);
+			let that = this;
+			this.interval = setInterval(() => {
+				let r = api.getDownloadTaskStatus(that.galleryId);
+				if (!r) return;
+				console.log(JSON.stringify(r));
+				if (r.progress >= 100) {
+					that.downloadStatus = 'succeed';
+					clearInterval(that.interval);
+				}
+			}, 1000);
 		},
 		deleteRecord() {
 			this.downloadStatus = 'notDownloaded';
@@ -653,6 +673,31 @@ body {
 			-webkit-line-clamp: 7;
 			-webkit-box-orient: vertical;
 		}
+	}
+}
+
+.downloading {
+	-webkit-transform: rotate(360deg);
+	animation: rotation 3s linear infinite !important;
+	-moz-animation: rotation 3s linear infinite;
+	-webkit-animation: rotation 3s linear infinite;
+	-o-animation: rotation 3s linear infinite;
+}
+@keyframes rotation {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(359deg);
+	}
+}
+@-webkit-keyframes rotation {
+	from {
+		-webkit-transform: rotate(0deg);
+	}
+
+	to {
+		-webkit-transform: rotate(360deg);
 	}
 }
 </style>

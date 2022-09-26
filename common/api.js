@@ -1,5 +1,5 @@
-import store from './global_store.js';
-
+import utils from '@/common/utils.js';
+const store = getApp().$store;
 const API_CONFIG = {
 	'e-hentai': {
 		protocol: 'https',
@@ -98,7 +98,6 @@ class EhAPI {
 		// 	}
 		// }
 		// #endif
-		console.debug(result);
 		return result;
 	}
 
@@ -383,7 +382,7 @@ class EhAPI {
 			}
 			let galleryData = {};
 			let htmlDoc = new DOMParser().parseFromString(ret.data, 'text/html');
-			
+
 			// detail left
 			let detailList = htmlDoc.getElementById("gdd").getElementsByTagName("tr");
 			Array.from(detailList).forEach(item => {
@@ -442,6 +441,94 @@ class EhAPI {
 		let img = htmlDoc.getElementById("img");
 		if (!img) return null;
 		return img.getAttribute("src");
+	}
+
+	/**
+	 * 创建一个下载任务，首先获取本子的全部基本信息以及每一张图
+	 * 所对应的下载URL，接着再创建下载队列，将每个下载任务的ID
+	 * 保存，定时调用查询。
+	 * 
+	 * @param {Object} galleryId
+	 */
+	async createDownloadTask(galleryId) {
+		console.log("[createDownloadTask] get basic data", galleryId);
+		for (let i = 0; i < store.downloadingList.length; i++) {
+			if (store.downloadingList[i].galleryId == galleryId) {
+				utils.startDownloadTasks(i);
+				return i;
+			}
+		}
+		let galleryDetail = await this.getGalleryDetail(galleryId);
+		if (!galleryDetail.success) return null;
+		delete galleryDetail.success;
+		let downloadInfo = {
+			galleryId,
+			...galleryDetail,
+			downloadTasks: []
+		};
+		for (let i = 0; i < downloadInfo.totalPages; i++) {
+			let pictureData;
+			for (let retry = 0; retry < 3; retry++) {
+				console.log("[createDownloadTask] getting image data ", galleryId, i);
+				pictureData = await this.loadImageData(galleryId, i);
+				if (!pictureData.success) {
+					console.log("[createDownloadTask] getting image data failed, retrying...", galleryId, i, retry);
+				} else {
+					break;
+				}
+			}
+			if (!pictureData.success) {
+				console.log("[createDownloadTask] getting image data failed, max retried exceeded.", galleryId, i);
+				return null;
+			}
+			downloadInfo.downloadTasks = downloadInfo.downloadTasks.concat(pictureData.previews);
+		}
+		console.log("[createDownloadTask]", galleryId, JSON.stringify(downloadInfo));
+		let index = store.downloadingList.push(downloadInfo) - 1;
+		utils.startDownloadTasks(index);
+		return index;
+	}
+
+	/**
+	 * 通过画廊ID获取下载任务进度，若任务不存在，返回null
+	 * 
+	 * @param {Object} galleryId
+	 */
+	getDownloadTaskStatus(galleryId) {
+		let task = null;
+		for (let i = 0; i < store.downloadingList.length; i++) {
+			if (store.downloadingList[i].galleryId == galleryId) {
+				task = store.downloadingList[i];
+				break;
+			}
+		}
+		if (!task) return null;
+		let total = task.downloadTasks.length,
+			success = 0,
+			failed = 0,
+			pending = 0;
+		task.downloadTasks.forEach(item => {
+			if (!item.status) {
+				pending++;
+			}
+			if (item.status == 'success') {
+				success++;
+			}
+			if (item.status == 'failed') {
+				failed++;
+			}
+			if (item.status == 'pending') {
+				pending++;
+			}
+		});
+		return {
+			started: task.started,
+			total,
+			success,
+			failed,
+			pending,
+			progress: success / total * 100
+		}
 	}
 }
 

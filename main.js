@@ -1,4 +1,5 @@
-import App from './App'
+import App from './App';
+import store from '@/common/global_store.js';
 
 // #ifdef APP-PLUS
 
@@ -10,6 +11,7 @@ checkNotifyPermission();
 // #ifndef VUE3
 import Vue from 'vue'
 Vue.config.productionTip = false
+Vue.prototype.$store = store;
 App.mpType = 'app'
 const app = new Vue({
 	...App

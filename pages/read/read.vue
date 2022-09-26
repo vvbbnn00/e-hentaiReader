@@ -356,29 +356,42 @@ export default {
 								plus.nativeUI.toast('请等待图片加载完毕再下载');
 								return;
 							}
-							plus.nativeUI.toast('正在下载图片');
-							uni.downloadFile({
-								url: dUrl,
-								success: res => {
-									if (res.statusCode === 200) {
-										plus.nativeUI.toast('正在保存至相册');
-										uni.saveImageToPhotosAlbum({
-											filePath: res.tempFilePath,
-											success: function() {
-												plus.nativeUI.toast('已保存至相册');
-											},
-											fail() {
-												plus.nativeUI.toast('保存至相册失败');
-											}
-										});
-									} else {
+							if (dUrl.startsWith('file')) {
+								plus.nativeUI.toast('正在保存至相册');
+								uni.saveImageToPhotosAlbum({
+									filePath: dUrl,
+									success: function() {
+										plus.nativeUI.toast('已保存至相册');
+									},
+									fail() {
+										plus.nativeUI.toast('保存至相册失败');
+									}
+								});
+							} else {
+								plus.nativeUI.toast('正在下载图片');
+								uni.downloadFile({
+									url: dUrl,
+									success: res => {
+										if (res.statusCode === 200) {
+											plus.nativeUI.toast('正在保存至相册');
+											uni.saveImageToPhotosAlbum({
+												filePath: res.tempFilePath,
+												success: function() {
+													plus.nativeUI.toast('已保存至相册');
+												},
+												fail() {
+													plus.nativeUI.toast('保存至相册失败');
+												}
+											});
+										} else {
+											plus.nativeUI.toast('图片下载失败');
+										}
+									},
+									fail() {
 										plus.nativeUI.toast('图片下载失败');
 									}
-								},
-								fail() {
-									plus.nativeUI.toast('图片下载失败');
-								}
-							});
+								});
+							}
 							break;
 					}
 				}
